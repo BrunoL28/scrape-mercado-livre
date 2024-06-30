@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraping de Produtos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .results {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .product {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+        .product:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Scraping de Produtos</h1>
+    <form id="scrapingForm">
+        <input type="text" id="productName" placeholder="Digite o nome do produto" required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div class="results" id="results"></div>
+
+    <script>
+        document.getElementById('scrapingForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const productName = document.getElementById('productName').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(`/scrape?product=${productName}`);
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar os produtos');
+                }
+                const products = await response.json();
+
+                if (products.length === 0) {
+                    resultsDiv.innerHTML = '<p>Nenhum produto encontrado.</p>';
+                    return;
+                }
+
+                products.forEach((product) => {
+                    const productDiv = document.createElement('div');
+                    productDiv.classList.add('product');
+
+                    const productPrice = product.hasDiscount
+                        ? `Preço com desconto: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.discountPrice)}, Preço original: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.originalPrice)}`
+                        : `Preço: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price)}`;
+
+                    productDiv.innerHTML = `
+                        <p>${productPrice}</p>
+                        <p><a href="${product.link}" target="_blank">Link para o produto</a></p>
+                    `;
+                    resultsDiv.appendChild(productDiv);
+                });
+            } catch (error) {
+                resultsDiv.innerHTML = `<p>${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
